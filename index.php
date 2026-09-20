@@ -364,7 +364,128 @@ $showSystemInfo = !defined("SHOW_SYSTEM_INFO") || SHOW_SYSTEM_INFO;
         echo $lastHeardFirst ? ($lastHeardHtml . $listsHtml) : ($listsHtml . $lastHeardHtml);
         ?>
 
-        <!-- Footer -->
+<!-- Gateway Status -->
+<div class="card-glossy p-6 mb-8">
+    <h2 class="text-2xl font-bold mb-6 flex items-center">
+        <svg class="w-6 h-6 mr-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        Gateway Status
+    </h2>
+    <div class="overflow-x-auto">
+        <table class="table-glossy">
+            <thead>
+                <tr>
+                    <th>Talkgroup</th>
+                    <th>Status</th>
+                    <th>Reason</th>
+                    <th>Last Local Callsign</th>
+                    <th>Last Update (<?php echo TIMEZONE; ?>)</th>
+                </tr>
+            </thead>
+            <tbody id="gw-table-body">
+                <tr><td colspan="5" class="text-center text-white/60">Waiting for data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
+<script>
+(function() {
+    var DASHBOARD_TZ = '<?php echo TIMEZONE; ?>';
+var MQTT_WS_URL = '<?php echo MQTT_WS_URL; ?>';
+    var tgState = {};
+var STATUS_LABELS = {
+    'linking': 'Linked',
+    'unlinked': 'Unlinked',
+    'relinking': 'Relinking',
+    'failed': 'Failed'
+};
+
+    function formatTimestamp(isoString) {
+        if (!isoString) return '-';
+        try {
+            var d = new Date(isoString);
+            return new Intl.DateTimeFormat('en-US', {
+                timeZone: DASHBOARD_TZ,
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false
+            }).format(d);
+        } catch (e) {
+            return isoString;
+        }
+    }
+
+    var ROLLOFF_MS = 5 * 60 * 1000;
+
+    function cleanupStale() {
+        var now = Date.now();
+        for (var tg in tgState) {
+            var s = tgState[tg];
+            var eventTime = new Date(s.timestamp).getTime();
+            if (s.action === 'unlinked' && s.reason !== 'excluded' && !isNaN(eventTime) && (now - eventTime) > ROLLOFF_MS) {
+                delete tgState[tg];
+            }
+        }
+    }
+
+    function render() {
+        cleanupStale();
+        var tbody = document.getElementById('gw-table-body');
+        var tgs = Object.keys(tgState).sort(function(a, b) { return Number(a) - Number(b); });
+        if (tgs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-white/60">Waiting for data...</td></tr>';
+            return;
+        }
+        var rows = '';
+        for (var i = 0; i < tgs.length; i++) {
+            var tg = tgs[i];
+            var s = tgState[tg];
+            var statusLabel = STATUS_LABELS[s.action] || s.action;
+	    rows += '<tr>';
+            rows += '<td>' + tg + '</td>';
+            rows += '<td>' + statusLabel + '</td>';
+            rows += '<td>' + (s.reason || '-') + '</td>';
+            rows += '<td>' + (s.callsign || '-') + '</td>';
+            rows += '<td>' + formatTimestamp(s.timestamp) + '</td>';
+            rows += '</tr>';
+        }
+        tbody.innerHTML = rows;
+    }
+
+	var client = mqtt.connect(MQTT_WS_URL);    
+    client.on('connect', function() {
+        client.subscribe('NXDNGateway/json/#');
+    });
+    client.on('message', function(topic, message) {
+        try {
+            var payload = JSON.parse(message.toString());
+            if (payload.link && payload.link.talkgroup !== undefined) {
+                var l = payload.link;
+                tgState[l.talkgroup] = {
+                    action: l.action,
+                    reason: l.reason,
+                    callsign: l.callsign,
+                    timestamp: l.timestamp
+                };
+                render();
+            }
+        } catch (e) {
+            console.error('Gateway status parse error:', e);
+        }
+    });
+    client.on('error', function(err) {
+        console.error('Gateway MQTT error:', err);
+    });
+
+    setInterval(render, 30000);
+})();
+</script>
+
+<!-- Footer -->
+
         <div class="card-glossy p-6 text-center">
             <div class="text-sm text-white/80">
                 <?php
