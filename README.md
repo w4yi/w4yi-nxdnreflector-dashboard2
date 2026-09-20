@@ -1,3 +1,14 @@
+# w4yi-nxdnreflector-dashboard2
+
+This is a maintained fork of [ShaYmez/NXDNReflector-Dashboard2](https://github.com/ShaYmez/NXDNReflector-Dashboard2), based on the v2.0.3 release, with the following addition:
+
+- **Live Gateway Status panel**, sourced via MQTT WebSocket from an NXDNGateway instance's JSON event stream (see [w4yi-nxdngateway](https://github.com/w4yi/w4yi-nxdngateway) for the matching gateway-side patches). Shows each talkgroup's current link state, reason, last local callsign, and last-update time in the dashboard's configured timezone. Dynamic talkgroups automatically roll off the table 5 minutes after going unlinked; scheduled-exclusion talkgroups stay visible regardless of link state.
+- The MQTT broker WebSocket URL is configurable via a new `MQTT_WS_URL` constant - see `config/config.example.php` for the full set of configuration constants including this one.
+
+See the commit history for full details. This fork is not affiliated with or endorsed by the upstream maintainer; all original copyright and licensing terms below remain unchanged.
+
+---
+
 # NXDNReflector-Dashboard2
 
 Modern web application dashboard for viewing connected repeaters, active users, and system statistics for NXDNReflector.
