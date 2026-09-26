@@ -501,7 +501,7 @@ var STATUS_LABELS = {
                 ?>
             </div>
             <div class="mt-3">
-                <a href="https://github.com/ShaYmez/NXDNReflector-Dashboard2" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline text-sm">
+                <a href="https://github.com/w4yi/w4yi-nxdnreflector-dashboard2" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline text-sm">
                     Get your own at GitHub
                 </a>
             </div>
