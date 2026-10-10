@@ -394,7 +394,8 @@ $showSystemInfo = !defined("SHOW_SYSTEM_INFO") || SHOW_SYSTEM_INFO;
 <script>
 (function() {
     var DASHBOARD_TZ = '<?php echo TIMEZONE; ?>';
-var MQTT_WS_URL = '<?php echo MQTT_WS_URL; ?>';
+var MQTT_WS_PATH = '<?php echo MQTT_WS_URL; ?>';
+    var MQTT_WS_URL = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + MQTT_WS_PATH;
     var tgState = {};
 var STATUS_LABELS = {
     'linking': 'Linked',
